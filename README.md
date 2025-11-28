@@ -1,2 +1,2 @@
-# trabajo_cripto_2025
+# trabajo cripto 2025
 Trabajo cripto
