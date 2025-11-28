@@ -29,9 +29,9 @@ def generate_certificate(port: int, certs_dir: str = "certs") -> tuple:
         print(f"Certificados para puerto {port} ya existen.")
         return cert_file, key_file
     
-    # Generar certificado autofirmado con OpenSSL
+    # Generar certificado autofirmado con OpenSSL (2048 bits para mejor rendimiento)
     cmd = [
-        "openssl", "req", "-x509", "-newkey", "rsa:4096",
+        "openssl", "req", "-x509", "-newkey", "rsa:2048",
         "-keyout", key_file,
         "-out", cert_file,
         "-days", "365",

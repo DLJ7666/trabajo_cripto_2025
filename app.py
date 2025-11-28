@@ -88,6 +88,11 @@ def main():
         default=None,
         help='Identificador de la instancia (por defecto: puerto)'
     )
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Activar modo debug'
+    )
     
     args = parser.parse_args()
     
@@ -120,7 +125,7 @@ def main():
         host=args.host,
         port=args.port,
         ssl_context=(cert_file, key_file),
-        debug=False
+        debug=args.debug
     )
     
     return 0

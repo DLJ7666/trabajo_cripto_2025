@@ -12,12 +12,18 @@ import subprocess
 import time
 import argparse
 
+try:
+    from generate_certs import generate_all_certificates
+except ImportError:
+    generate_all_certificates = None
+
 
 # Puertos por defecto para las 4 instancias
 DEFAULT_PORTS = [8443, 8444, 8445, 8446]
 
-# Lista para mantener los procesos
+# Lista para mantener los procesos con estado
 processes = []
+terminated_processes = set()
 
 
 def cleanup(signum=None, frame=None):
@@ -93,8 +99,11 @@ def main():
     
     # Generar certificados si se solicita
     if args.generate_certs:
+        if generate_all_certificates is None:
+            print("Error: No se pudo importar el módulo generate_certs.")
+            print("Asegúrese de que generate_certs.py existe.")
+            return 1
         print("Generando certificados...")
-        from generate_certs import generate_all_certificates
         generate_all_certificates(args.ports)
         print()
     
@@ -136,7 +145,8 @@ def main():
         while True:
             # Verificar si algún proceso terminó
             for i, proc in enumerate(processes):
-                if proc.poll() is not None:
+                if proc.poll() is not None and i not in terminated_processes:
+                    terminated_processes.add(i)
                     print(f"Instancia en puerto {args.ports[i]} terminó inesperadamente")
             time.sleep(1)
     except KeyboardInterrupt:
