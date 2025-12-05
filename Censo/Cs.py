@@ -12,6 +12,11 @@ registro_C1 = set()
 registro_C2 = set()
 registro_C3 = set()
 
+USUARIOS_VALIDOS = {
+    "JohnnyMelabo": "password123",
+    "NipinchoNipongo": "password456",
+    }
+
 @appC.get("/public_key/{c_id}")
 def get_public_key(c_id: int):
     if c_id == 1:
