@@ -1,9 +1,18 @@
 import rsa
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from firmar import firmar
 
 appC = FastAPI()
+
+appC.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 clave_publica_C1, clave_privada_C1 = rsa.newkeys(512)
 clave_publica_C2, clave_privada_C2 = rsa.newkeys(512)
