@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnC1 = document.getElementById('btn-c1');
     const btnC2 = document.getElementById('btn-c2');
     const btnC3 = document.getElementById('btn-c3');
+    const btnKeyC1 = document.getElementById('clave-c1');
+    const btnKeyC2 = document.getElementById('clave-c2');
+    const btnKeyC3 = document.getElementById('clave-c3');
     const btnVote = document.getElementById('btn-vote');
     const logOutput = document.getElementById('log-output');
     const usernameInput = document.getElementById('username');
@@ -17,9 +20,47 @@ document.addEventListener('DOMContentLoaded', () => {
         c3: null,
     };
 
+    const publicKeys = {
+        c1: null,
+        c2: null,
+        c3: null
+    };
+
     function log(message) {
         console.log(message);
         logOutput.textContent = `${new Date().toLocaleTimeString()}: ${message}\n\n` + logOutput.textContent;
+    }
+
+    async function getPublicKey(c_id) {
+        log(`Solicitando clave pública de C${c_id}...`);
+        try {
+            const response = await fetch(`${API_BASE_URL}/public_key/${c_id}`);
+            const pubkeySpan = document.getElementById(`pubkey-c${c_id}`);
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Guardamos la clave
+            publicKeys[`c${c_id}`] = data;
+
+            if (pubkeySpan) {
+                pubkeySpan.textContent = `n: ${data.n}, e: ${data.e}`;
+                pubkeySpan.style.color = 'green';
+                pubkeySpan.style.fontWeight = 'bold';
+            }
+            
+            log(`Clave Pública C${c_id} recibida:\nn: ${data.n}\ne: ${data.e}`);
+            
+            // Opcional: Deshabilitar el botón para indicar que ya se tiene
+            document.getElementById(`clave-c${c_id}`).textContent = `✓ Clave C${c_id} Recibida`;
+            document.getElementById(`clave-c${c_id}`).disabled = true;
+
+        } catch (error) {
+            log(`Error al obtener clave de C${c_id}: ${error.message}`);
+        }
     }
 
     async function identifyWithC(clave, c_id) {
@@ -111,6 +152,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btnC1.addEventListener('click', () => identifyWithC(1));
     btnC2.addEventListener('click', () => identifyWithC(2));
     btnC3.addEventListener('click', () => identifyWithC(3));
+
+    btnKeyC1.addEventListener('click', () => getPublicKey(1));
+    btnKeyC2.addEventListener('click', () => getPublicKey(2));
+    btnKeyC3.addEventListener('click', () => getPublicKey(3));
+
     btnVote.addEventListener('click', vote);
 
     log('Sistema listo. Por favor, identifíquese.');
