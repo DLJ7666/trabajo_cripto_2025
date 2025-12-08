@@ -14,12 +14,20 @@ appC.add_middleware(
     allow_headers=["*"],
 )
 
-clave_publica_C1, clave_privada_C1 = rsa.newkeys(512)
-clave_publica_C2, clave_privada_C2 = rsa.newkeys(512)
-clave_publica_C3, clave_privada_C3 = rsa.newkeys(512)
+clave_publica_C1, clave_privada_C1 = rsa.newkeys(16)
+clave_publica_C2, clave_privada_C2 = rsa.newkeys(16)
+clave_publica_C3, clave_privada_C3 = rsa.newkeys(16)
 registro_C1 = set()
 registro_C2 = set()
 registro_C3 = set()
+
+@appC.get("/myrsa_key")
+def get_my_rsa_key():
+    mi_clave_publica, mi_clave_privada = rsa.newkeys(16)
+    return {
+        "publica": int(mi_clave_publica),
+        "privada": mi_clave_privada
+    }
 
 @appC.get("/public_key/{c_id}")
 def get_public_key(c_id: int):
