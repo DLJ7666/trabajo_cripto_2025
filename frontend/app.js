@@ -10,10 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
 
-    // URL base de tu API. Asegúrate de que el puerto sea el correcto.
     const API_BASE_URL = 'http://127.0.0.1:8000';
 
-    // Almacenaremos las firmas aquí
+    const USUARIOS_VALIDOS = {
+    "JohnnyMelabo": "password123",
+    "NipinchoNipongo": "password456",
+    }
+
     const signatures = {
         c1: null,
         c2: null,
@@ -26,9 +29,47 @@ document.addEventListener('DOMContentLoaded', () => {
         c3: null
     };
 
+    let currentUser = null;
+
+    const btnLogin = document.getElementById('btn-login');
+    const loginSection = document.getElementById('login-section');
+    const votingSection = document.getElementById('voting-section');
+    const userDisplay = document.getElementById('user-display');
+
     function log(message) {
         console.log(message);
         logOutput.textContent = `${new Date().toLocaleTimeString()}: ${message}\n\n` + logOutput.textContent;
+    }
+
+    function login() {
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+        
+        if (!username || !password) {
+            log("Error: Debes introducir usuario y contraseña.");
+            alert("Por favor, introduce usuario y contraseña.");
+            return;
+        }
+
+        if (USUARIOS_VALIDOS[username]) {
+            if (USUARIOS_VALIDOS[username] === password) {
+                log(`Inicio de sesión exitoso para: ${username}`);
+            
+                if (loginSection) loginSection.style.display = 'none';
+                if (votingSection) votingSection.style.display = 'block';
+            
+                if (userDisplay) userDisplay.textContent = username;
+                currentUser = username;
+
+                passwordInput.value = '';
+            } else {
+                log(`Intento de inicio de sesión fallido para: ${username}`);
+                alert("Contraseña incorrecta.");
+            }
+        } else {
+            log(`Intento de inicio de sesión no válido para: ${username}`);
+            alert("Usuario no registrado.");
+        }
     }
 
     async function getPublicKey(c_id) {
@@ -66,20 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function identifyWithC(clave, c_id) {
         log(`Iniciando identificación con C${c_id}...`);
 
-        const username = usernameInput.value;
-        const password = passwordInput.value;
-
-        if (!username || !password) {
-            log("Error: Debes introducir usuario y contraseña.");
-            return;
-        }
+        const certUsername = currentUser;
+        const certPassword = USUARIOS_VALIDOS[currentUser];
 
         try {
             const mensaje = 1000000000
             
             // 2. Generamos un "certificado" único para esta solicitud.
             //    Usamos un timestamp para asegurar que no se repita.
-            const certificado = `cert-${c_id}-${Date.now()}`;
+            const certificado = `${certUsername}-${certPassword}`;
 
             log(`Enviando a C${c_id}:\nMensaje: ${mensaje}\nCertificado: ${certificado}`);
 
@@ -158,6 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnKeyC3.addEventListener('click', () => getPublicKey(3));
 
     btnVote.addEventListener('click', vote);
+
+    btnLogin.addEventListener('click', login);
 
     log('Sistema listo. Por favor, identifíquese.');
 });

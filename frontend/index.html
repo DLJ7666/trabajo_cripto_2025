@@ -9,12 +9,20 @@
 <body>
     <div class="container">
         <h1>Portal del Votante</h1>
-        <div class="card">
+        <!-- SECCIÓN DE LOGIN -->
+        <div id="login-section" class="card">
+            <h2>Iniciar Sesión</h2>
             <div class="login-form" style="margin-bottom: 15px;">
                 <input type="text" id="username" placeholder="Usuario" style="padding: 5px; margin-right: 5px;">
                 <input type="password" id="password" placeholder="Contraseña" style="padding: 5px;">
+                <button id="btn-login">Entrar</button>
             </div>
+        </div>
+
+        <!-- SECCIÓN DE VOTACIÓN (Oculta inicialmente) -->
+        <div id="voting-section" style="display: none;">
             <h2>Paso 1: Identificación</h2>
+            <p>Bienvenido, <span id="user-display" style="font-weight: bold;"></span>.</p>
             <p>Para poder votar, primero debes identificarte con las 3 autoridades.</p>
             <div class="obtener-claves">
                 <button id="clave-c1">Obtener clave C1</button>
@@ -31,11 +39,11 @@
                 <button id="btn-c2">Identificarse con C2</button>
                 <button id="btn-c3">Identificarse con C3</button>
             </div>
-        </div>
-        <div class="card">
-            <h2>Paso 2: Votar</h2>
-            <p>Una vez tengas las 3 firmas, podrás emitir tu voto.</p>
-            <button id="btn-vote" disabled>Votar</button>
+            <div class="card">
+                <h2>Paso 2: Votar</h2>
+                <p>Una vez tengas las 3 firmas, podrás emitir tu voto.</p>
+                <button id="btn-vote" disabled>Votar</button>
+            </div>
         </div>
         <div class="card log">
             <h2>Registro de Actividad</h2>
