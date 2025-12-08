@@ -10,19 +10,35 @@ function modPow(base, exp, mod) {
 }
 
 function inverso(a, n) {
-    let t = 0;
-    let newT = 1;
-    let r = n;
-    let newR = a;
+    // Asegurarnos de que a sea positivo
+    a = ((a % n) + n) % n;
 
-    while (newR !== 0) {
-        let quotient = r / newR;
-        [t, newT] = [newT, t - quotient * newT];
-        [r, newR] = [newR, r - quotient * newR];
+    let t = 0, nuevoT = 1;
+    let r = n, nuevoR = a;
+
+    while (nuevoR !== 0) {
+        const cociente = Math.floor(r / nuevoR);
+
+        // Actualizamos t
+        let tempT = t;
+        t = nuevoT;
+        nuevoT = tempT - cociente * nuevoT;
+
+        // Actualizamos r
+        let tempR = r;
+        r = nuevoR;
+        nuevoR = tempR - cociente * nuevoR;
     }
 
-    if (r > 1) throw new Error('a no es invertible (no son coprimos)');
-    if (t < 0) t += n;
+    if (r > 1) {
+        // No existe inverso si gcd(a,n) != 1
+        return null;
+    }
+
+    // Aseguramos que el inverso sea positivo
+    if (t < 0) {
+        t += n;
+    }
 
     return t;
 }
