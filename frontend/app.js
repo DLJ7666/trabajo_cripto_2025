@@ -31,8 +31,7 @@ function inverso(a, n) {
     }
 
     if (r > 1) {
-        // No existe inverso si gcd(a,n) != 1
-        return null;
+        throw new Error('a no es invertible (no son coprimos)');
     }
 
     // Aseguramos que el inverso sea positivo
