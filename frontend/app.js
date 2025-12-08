@@ -1,3 +1,32 @@
+function modPow(base, exp, mod) {
+    let result = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp % 2 === 1) result = (result * base) % mod;
+        exp = Math.floor(exp / 2);
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+function inverso(a, n) {
+    let t = 0;
+    let newT = 1;
+    let r = n;
+    let newR = a;
+
+    while (newR !== 0) {
+        let quotient = r / newR;
+        [t, newT] = [newT, t - quotient * newT];
+        [r, newR] = [newR, r - quotient * newR];
+    }
+
+    if (r > 1) throw new Error('a no es invertible (no son coprimos)');
+    if (t < 0) t += n;
+
+    return t;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnC1 = document.getElementById('btn-c1');
     const btnC2 = document.getElementById('btn-c2');
@@ -9,6 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const logOutput = document.getElementById('log-output');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const btnLogin = document.getElementById('btn-login');
+    const loginSection = document.getElementById('login-section');
+    const votingSection = document.getElementById('voting-section');
+    const userDisplay = document.getElementById('user-display');
+    const kButtons = document.querySelectorAll('.btn-k');
+    const kGrid = document.getElementById('k-grid');
+    const kMsg = document.getElementById('k-selection-msg');
 
     const API_BASE_URL = 'http://127.0.0.1:8000';
 
@@ -29,12 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
         c3: null
     };
 
-    let currentUser = null;
+    const currentUserRsa= null;
 
-    const btnLogin = document.getElementById('btn-login');
-    const loginSection = document.getElementById('login-section');
-    const votingSection = document.getElementById('voting-section');
-    const userDisplay = document.getElementById('user-display');
+    let currentUser = null;
+    let selectedK = null;
 
     function log(message) {
         console.log(message);
@@ -104,22 +138,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    kButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (signatures.c1 || signatures.c2 || signatures.c3) {
+                return;
+            }
+
+            kButtons.forEach(b => {
+                b.style.backgroundColor = ''; // Restaurar color original
+                b.style.color = '';
+                b.classList.remove('selected');
+            });
+
+            btn.style.backgroundColor = '#4CAF50'; // Verde selección
+            btn.style.color = 'white';
+            btn.classList.add('selected');
+            
+            selectedK = parseInt(btn.getAttribute('data-value'));
+            log(`Valor k seleccionado: ${selectedK}`);
+            
+            btnC1.disabled = false;
+            btnC2.disabled = false;
+            btnC3.disabled = false;
+            kMsg.textContent = `Valor k=${selectedK} seleccionado. Procede a identificarte.`;
+        });
+    });
+
     async function identifyWithC(clave, c_id) {
+        if (!selectedK) {
+            alert("Por favor, selecciona un valor para k primero.");
+            return;
+        }
+
+        const pk = publicKeys[`c${c_id}`];
+        console.log('Public Key:', pk);
+        if (!pk) {
+            alert(`Primero debes obtener la clave pública de C${c_id}.`);
+            log(`Error: Intento de identificación sin clave pública de C${c_id}.`);
+            return;
+        }
+
+        kButtons.forEach(b => b.disabled = true);
+        kMsg.textContent = `Valor k=${selectedK} fijado.`;
+
         log(`Iniciando identificación con C${c_id}...`);
 
         const certUsername = currentUser;
         const certPassword = USUARIOS_VALIDOS[currentUser];
 
         try {
-            const mensaje = 1000000000
+            const kProcesada = modPow(selectedK, pk.e, pk.n)
+            const mensaje = (clave * kProcesada) % pk.n;
             
-            // 2. Generamos un "certificado" único para esta solicitud.
-            //    Usamos un timestamp para asegurar que no se repita.
             const certificado = `${certUsername}-${certPassword}`;
 
             log(`Enviando a C${c_id}:\nMensaje: ${mensaje}\nCertificado: ${certificado}`);
 
-            // 3. Hacemos la llamada a la API
             const response = await fetch(`${API_BASE_URL}/identify/${c_id}`, {
                 method: 'GET',
                 headers: {
@@ -162,11 +236,28 @@ document.addEventListener('DOMContentLoaded', () => {
         log('Iniciando proceso de voto...');
         // Aquí iría la lógica para comunicarte con el servidor de votación (VS)
         // Deberías enviar tu elección de voto junto con las tres firmas obtenidas.
+
+        const firmasDescegadas = {
+            c1: null,
+            c2: null,
+            c3: null,
+        }
+
+        for (const c_id of [1, 2, 3]) {
+            const sig = signatures[`c${c_id}`];
+            const pk = publicKeys[`c${c_id}`];
+
+            // Descegar la firma
+            const firmaDescegada = sig.firma * inverso(selectedK, pk.n);
+            firmasDescegadas[`c${c_id}`] = firmaDescegada;
+        }
         
         const voto = {
             eleccion: "Candidato_A", // O la opción que elija el usuario
-            identificaciones: signatures
+            identificaciones: firmasDescegadas
         };
+
+
 
         log('Enviando voto al Servidor de Votación (VS)...');
         log(JSON.stringify(voto, null, 2));
@@ -185,13 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btnVote.disabled = true;
     }
 
-    btnC1.addEventListener('click', () => identifyWithC(1));
-    btnC2.addEventListener('click', () => identifyWithC(2));
-    btnC3.addEventListener('click', () => identifyWithC(3));
-
     btnKeyC1.addEventListener('click', () => getPublicKey(1));
     btnKeyC2.addEventListener('click', () => getPublicKey(2));
     btnKeyC3.addEventListener('click', () => getPublicKey(3));
+
+    btnC1.addEventListener('click', () => identifyWithC(33,1));
+    btnC2.addEventListener('click', () => identifyWithC(33,2));
+    btnC3.addEventListener('click', () => identifyWithC(33,3));
 
     btnVote.addEventListener('click', vote);
 

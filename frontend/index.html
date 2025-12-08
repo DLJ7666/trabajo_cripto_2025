@@ -21,26 +21,49 @@
 
         <!-- SECCIÓN DE VOTACIÓN (Oculta inicialmente) -->
         <div id="voting-section" style="display: none;">
-            <h2>Paso 1: Identificación</h2>
-            <p>Bienvenido, <span id="user-display" style="font-weight: bold;"></span>.</p>
-            <p>Para poder votar, primero debes identificarte con las 3 autoridades.</p>
-            <div class="obtener-claves">
-                <button id="clave-c1">Obtener clave C1</button>
-                <button id="clave-c2">Obtener clave C2</button>
-                <button id="clave-c3">Obtener clave C3</button>
-            </div>
-            <div class="claves">
-                <div>C1: <span id="pubkey-c1">No obtenida</span></div>
-                <div>C2: <span id="pubkey-c2">No obtenida</span></div>
-                <div>C3: <span id="pubkey-c3">No obtenida</span></div>
-            </div>
-            <div class="buttons">
-                <button id="btn-c1">Identificarse con C1</button>
-                <button id="btn-c2">Identificarse con C2</button>
-                <button id="btn-c3">Identificarse con C3</button>
+            <div class="card">
+                <h2>Paso 1: Identificación</h2>
+                <p>Bienvenido, <span id="user-display" style="font-weight: bold;"></span>.</p>
+                <p>Para poder votar, primero debes identificarte con las 3 autoridades.</p>
+                <div class="obtener-claves">
+                    <button id="clave-c1">Obtener clave C1</button>
+                    <button id="clave-c2">Obtener clave C2</button>
+                    <button id="clave-c3">Obtener clave C3</button>
+                </div>
+                <div class="claves">
+                    <div>C1: <span id="pubkey-c1">No obtenida</span></div>
+                    <div>C2: <span id="pubkey-c2">No obtenida</span></div>
+                    <div>C3: <span id="pubkey-c3">No obtenida</span></div>
+                </div>
             </div>
             <div class="card">
-                <h2>Paso 2: Votar</h2>
+                <h2>Paso 2: Firmar Identidad</h2>
+                <p>Escoge tu k (lo más aleatoriamente posible).</p>
+                <div id="k-grid" class="k-grid-container"
+                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <button class="btn-k" data-value="2" selected>2</button>
+                    <button class="btn-k" data-value="3">3</button>
+                    <button class="btn-k" data-value="5">5</button>
+                    <button class="btn-k" data-value="7">7</button>
+                    <button class="btn-k" data-value="11">11</button>
+                    <button class="btn-k" data-value="13">13</button>
+                    <button class="btn-k" data-value="17">17</button>
+                    <button class="btn-k" data-value="19">19</button>
+                    <button class="btn-k" data-value="23">23</button>
+                    <button class="btn-k" data-value="29">29</button>
+                    <button class="btn-k" data-value="31">31</button>
+                    <button class="btn-k" data-value="37">37</button>
+                </div>
+                <p id="k-selection-msg" style="font-size: 0.9em; color: #666;">
+                    Selecciona un valor para continuar.</p>
+                <div class="buttons">
+                    <button id="btn-c1" disabled>Identificarse con C1</button>
+                    <button id="btn-c2" disabled>Identificarse con C2</button>
+                    <button id="btn-c3" disabled>Identificarse con C3</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Paso 3: Votar</h2>
                 <p>Una vez tengas las 3 firmas, podrás emitir tu voto.</p>
                 <button id="btn-vote" disabled>Votar</button>
             </div>
