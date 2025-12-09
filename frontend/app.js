@@ -1,47 +1,3 @@
-function modPow(base, exp, mod) {
-    let result = 1;
-    base = base % mod;
-    while (exp > 0) {
-        if (exp % 2 === 1) result = (result * base) % mod;
-        exp = Math.floor(exp / 2);
-        base = (base * base) % mod;
-    }
-    return result;
-}
-
-function inverso(a, n) {
-    // Asegurarnos de que a sea positivo
-    a = ((a % n) + n) % n;
-
-    let t = 0, nuevoT = 1;
-    let r = n, nuevoR = a;
-
-    while (nuevoR !== 0) {
-        const cociente = Math.floor(r / nuevoR);
-
-        // Actualizamos t
-        let tempT = t;
-        t = nuevoT;
-        nuevoT = tempT - cociente * nuevoT;
-
-        // Actualizamos r
-        let tempR = r;
-        r = nuevoR;
-        nuevoR = tempR - cociente * nuevoR;
-    }
-
-    if (r > 1) {
-        throw new Error('a no es invertible (no son coprimos)');
-    }
-
-    // Aseguramos que el inverso sea positivo
-    if (t < 0) {
-        t += n;
-    }
-
-    return t;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const btnC1 = document.getElementById('btn-c1');
     const btnC2 = document.getElementById('btn-c2');
@@ -60,11 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const kButtons = document.querySelectorAll('.btn-k');
     const kGrid = document.getElementById('k-grid');
     const kMsg = document.getElementById('k-selection-msg');
+    const vButtons = document.querySelectorAll('.btn-k');
+    const mGrid = document.getElementById('m-grid');
+    const mMsg = document.getElementById('m-selection-msg');
 
     const API_BASE_URL = 'http://127.0.0.1:8000';
-
+    
     const USUARIOS_VALIDOS = {
-    "JohnnyMelabo": "password123",
+    "JohnnyMentero": "password123",
     "NipinchoNipongo": "password456",
     }
 
@@ -80,17 +39,19 @@ document.addEventListener('DOMContentLoaded', () => {
         c3: null
     };
 
-    const currentUserRsa= null;
-
+    let currentUserRsaPrivate= null;
+    let currentUserRsaPublic= null;
     let currentUser = null;
     let selectedK = null;
+
+    let mensajeVS = null;
 
     function log(message) {
         console.log(message);
         logOutput.textContent = `${new Date().toLocaleTimeString()}: ${message}\n\n` + logOutput.textContent;
     }
 
-    function login() {
+    async function login() {
         const username = usernameInput.value;
         const password = passwordInput.value;
         
@@ -110,7 +71,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userDisplay) userDisplay.textContent = username;
                 currentUser = username;
 
-                passwordInput.value = '';
+                passwordInput.value = '';  
+                 
+                async function obtenerMiClaveRSA() {
+                    try {
+                        const response = await fetch(API_BASE_URL+'/myrsa_key');
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+                        const data = await response.json();
+
+                        currentUserRsaPublic = {
+                            n: data.publica.n,
+                            e: data.publica.e
+                        }
+                        currentUserRsaPrivate = data.privada.d
+                        
+                        console.log('Clave recibida del servidor:', currentUserRsaPublic,
+                            currentUserRsaPrivate);
+                        
+                    } catch (error) {
+                        console.error('Error al obtener la clave RSA:', error);
+                        alert('No se pudo obtener la clave RSA del servidor.');
+                    }
+                }
+            obtenerMiClaveRSA();
             } else {
                 log(`Intento de inicio de sesión fallido para: ${username}`);
                 alert("Contraseña incorrecta.");
@@ -202,8 +187,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const certPassword = USUARIOS_VALIDOS[currentUser];
 
         try {
-            const kProcesada = modPow(selectedK, pk.e, pk.n)
-            const mensaje = (clave * kProcesada) % pk.n;
+            const kProcesada = await fetch (`${API_BASE_URL}/pow`, {
+                method: 'GET',
+                headers: {
+                    'a': JSON.stringify(selectedK),
+                    'b': JSON.stringify(pk.e),
+                    'n': JSON.stringify(pk.n)
+                }
+            });
+            const kProcesadaData = await kProcesada.json();
+            console.log('k procesada recibida:', kProcesadaData);
+            const mensaje = (clave * kProcesadaData) % pk.n;
             
             const certificado = `${certUsername}-${certPassword}`;
 
@@ -226,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const firma = data.message;
 
             // 4. Guardamos la firma y actualizamos la UI
-            signatures[`c${c_id}`] = { mensaje, firma };
+            signatures[`c${c_id}`] = { firma };
             log(`Éxito con C${c_id}! Firma recibida:\n${firma}`);
             
             document.getElementById(`btn-c${c_id}`).disabled = true;
@@ -247,10 +241,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function vote() {
+    let selectedParty = null;
+
+    document.querySelectorAll('.btn-party').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Quitar clase de selección a todos
+            document.querySelectorAll('.btn-party').forEach(b => b.classList.remove('selected'));
+            // Marcar el botón clickeado
+            btn.classList.add('selected');
+            selectedParty = btn.dataset.party;
+            document.getElementById('party-selection-msg').textContent = `Has seleccionado: ${selectedParty}`;
+            // Habilitar botón de votar si ya se tienen las firmas
+            if (signatures.c1 && signatures.c2 && signatures.c3) {
+                document.getElementById('btn-vote').disabled = false;
+            }
+        });
+    });
+
+    async function vote() {
+        if (!selectedParty) {
+            alert("Debes seleccionar un candidato antes de votar.");
+            return;
+        }
+
         log('Iniciando proceso de voto...');
-        // Aquí iría la lógica para comunicarte con el servidor de votación (VS)
-        // Deberías enviar tu elección de voto junto con las tres firmas obtenidas.
 
         const firmasDescegadas = {
             c1: null,
@@ -263,41 +277,99 @@ document.addEventListener('DOMContentLoaded', () => {
             const pk = publicKeys[`c${c_id}`];
 
             // Descegar la firma
-            const firmaDescegada = sig.firma * inverso(selectedK, pk.n);
+            const inverso = await fetch(`${API_BASE_URL}/pow`, {
+                method: 'GET',
+                headers: {
+                    'a': JSON.stringify(selectedK),
+                    'b': JSON.stringify(-1),
+                    'n': JSON.stringify(pk.n)
+                }
+            });
+            const inversoData = await inverso.json();
+            console.log(`Inverso de k para C${c_id} recibido:`, inversoData);
+            const firmaDescegada = (sig.firma * inversoData) % pk.n;
             firmasDescegadas[`c${c_id}`] = firmaDescegada;
         }
-        
+
+        log('Firmas descegadas:');
+        log(JSON.stringify(firmasDescegadas, null, 2));
+
+        // Usar selectedParty como elección
         const voto = {
-            eleccion: "Candidato_A", // O la opción que elija el usuario
+            eleccion: selectedParty,
             identificaciones: firmasDescegadas
         };
-
-
 
         log('Enviando voto al Servidor de Votación (VS)...');
         log(JSON.stringify(voto, null, 2));
 
-        // Simulación de llamada a la API de VS
-        // fetch('http://<url_vs>/votar', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(voto)
-        // })
-        // .then(response => response.json())
-        // .then(data => log(`Respuesta de VS: ${data.message}`))
-        // .catch(error => log(`Error al votar: ${error.message}`));
+        const cabecera = {
+                'identificacion-c1': JSON.stringify(firmasDescegadas.c1),
+                'n-c1': JSON.stringify(publicKeys.c1.n),
+                'e-c1': JSON.stringify(publicKeys.c1.e),
+                'identificacion-c2': JSON.stringify(firmasDescegadas.c2),
+                'n-c2': JSON.stringify(publicKeys.c2.n),
+                'e-c2': JSON.stringify(publicKeys.c2.e),
+                'identificacion-c3': JSON.stringify(firmasDescegadas.c3),
+                'n-c3': JSON.stringify(publicKeys.c3.n),
+                'e-c3': JSON.stringify(publicKeys.c3.e),
+                'e': JSON.stringify(currentUserRsaPublic.e),
+            };
 
-        alert("¡Voto enviado! (Simulación)");
-        btnVote.disabled = true;
-    }
+        log('Enviando identificación al VS...');
+        log(JSON.stringify(cabecera, null, 2));
+
+        const response = await fetch('http://localhost:8888/identify', {
+            method: 'GET',
+            headers: cabecera
+        });
+        const mensaje = await response.json();
+        log(`Respuesta del Servidor de Votación:\n${JSON.stringify(mensaje)}`);
+        mensajeVS = mensaje;
+
+        const cabecera_pou = {
+                'a': JSON.stringify(mensajeVS),
+                'b': currentUserRsaPrivate,
+                'n': currentUserRsaPublic.n
+            }
+
+        const potenciaRespuestaVS = await fetch(API_BASE_URL+"/pow", {
+            method: 'GET',
+            headers: cabecera_pou
+        });
+
+        const respuestaVS = await potenciaRespuestaVS.json();
+
+        const cabecera_verificacion = {
+                'mensaje': JSON.stringify(mensajeVS),
+                'response': JSON.stringify(respuestaVS),
+                'n': currentUserRsaPublic.n,
+        };
+        
+        log(cabecera_verificacion);
+        
+        const verificacion = await fetch('http://localhost:8888/verify', {
+            method: 'GET',
+            headers: cabecera_verificacion
+        });
+
+        const chequeo = await verificacion.json();
+        log(`Verificación de la respuesta del VS: \n${chequeo.mensaje}`);
+        
+        if (chequeo.status) {
+            alert("¡Usuario verificado! Ya puede emitir su voto.")
+        };
+    };
+
+
 
     btnKeyC1.addEventListener('click', () => getPublicKey(1));
     btnKeyC2.addEventListener('click', () => getPublicKey(2));
     btnKeyC3.addEventListener('click', () => getPublicKey(3));
 
-    btnC1.addEventListener('click', () => identifyWithC(33,1));
-    btnC2.addEventListener('click', () => identifyWithC(33,2));
-    btnC3.addEventListener('click', () => identifyWithC(33,3));
+    btnC1.addEventListener('click', () => identifyWithC(currentUserRsaPublic.e,1));
+    btnC2.addEventListener('click', () => identifyWithC(currentUserRsaPublic.e,2));
+    btnC3.addEventListener('click', () => identifyWithC(currentUserRsaPublic.e,3));
 
     btnVote.addEventListener('click', vote);
 

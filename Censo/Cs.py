@@ -25,8 +25,8 @@ registro_C3 = set()
 def get_my_rsa_key():
     mi_clave_publica, mi_clave_privada = rsa.newkeys(16)
     return {
-        "publica": int(mi_clave_publica),
-        "privada": mi_clave_privada
+        "publica": {"n": str(mi_clave_publica.n), "e": str(mi_clave_publica.e)},
+        "privada": {"n": str(mi_clave_privada.n), "e": str(mi_clave_privada.e), "d": str(mi_clave_privada.d)}
     }
 
 @appC.get("/public_key/{c_id}")
@@ -74,3 +74,7 @@ def identify(c_id: int, mensaje : int = Header(...), certificado: str = Header(.
         raise HTTPException(status_code=404, detail="Clave privada no encontrada")
     
     return {"message": firmar(mensaje, clave_privada)}
+
+@appC.get("/pow")
+def modpow(a: int = Header(...), b: int = Header(...), n: int = Header(...)):
+    return pow(a, b, n)
